@@ -1,4 +1,4 @@
-import http = require('http');
+import path = require('path');
 import {
   CompletionItem, CompletionItemKind,
   createConnection,
@@ -31,6 +31,7 @@ import {
 import HTTPServer from './http-server';
 import { TableColumnCompletionItem, TableCompletionItem } from './requests/completion/models';
 import Logger from './utils/logger';
+import USQLDownloader from './utils/usql-downloader';
 
 namespace SQLToolsLanguageServer {
   const server: IConnection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
@@ -90,6 +91,7 @@ namespace SQLToolsLanguageServer {
 
   /* server events */
   server.onInitialize((params): InitializeResult => {
+    USQLDownloader.checkAndDownload(path.dirname(path.dirname(__dirname)));
     workspaceRoot = params.rootPath;
     return {
       capabilities: {
