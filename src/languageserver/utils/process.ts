@@ -19,7 +19,7 @@ namespace Process {
         }
         return resolve({result, error, code});
       });
-    });
+    }) as Promise<{ result?: string, error: string, code: number }>;
   }
 }
 

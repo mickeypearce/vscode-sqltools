@@ -48,7 +48,13 @@ namespace USQLDowloader {
   }
 
   async function usqlUpdated() {
-    return true;
+    try {
+      const { result } = await Process.run(getBinPath(), ['--version']);
+      return new RegExp(usqlVersion.replace(/^v/, '')).test(result);
+    } catch (e) {
+      Logger.error('Failed to check usql version', e);
+      return false;
+    }
   }
 
   async function download() {
