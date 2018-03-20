@@ -5,9 +5,9 @@ import {
   DialectQueries,
 } from './../interface';
 import Utils from './../utils';
-import Process from '../../languageserver/utils/process';
 import path = require('path');
-import Logger from './';
+import { spawnSync } from 'child_process';
+import Process from '../../languageserver/utils/process';
 
 export default class SQLiteUSQL implements ConnectionDialect {
   public connection: Promise<any>;
@@ -62,18 +62,23 @@ export default class SQLiteUSQL implements ConnectionDialect {
 
   public query(query: string): Promise<DatabaseInterface.QueryResults[]> {
     const queries = query.split(/\s*;\s*(?=([^']*'[^']*')*[^']*$)/g);
-    return Process.run(this.getBinPath(), [this.getDbUri(), '-c', query])
+    return Process.run(this.getBinPath(), [this.getDbUri(), '-c', query], { cwd: this.credentials.workspace })
     .then(({ result }) => {
+      const lines = result.split('\n');
+      const cols = this.splitRow(lines.slice(1, 2).pop());
+      const messages = lines.slice(lines.length - 3, lines.length - 2);
+      const res = lines.slice(3, lines.length - 3).map((row) => this.parseRow(row, cols));
+
       return [
         {
-          results: result.split('\n').map((a) => ({ col1: a })),
-          cols: ['col1'],
+          results: res,
+          cols,
           query,
-          messages: [],
+          messages,
         },
       ];
     })
-    .catch(({ error }) => Promise.reject(error));
+    .catch((e) => Promise.reject(e));
   }
 
   public getTables(): Promise<DatabaseInterface.Table[]> {
@@ -122,16 +127,24 @@ export default class SQLiteUSQL implements ConnectionDialect {
   }
 
   private getDbUri() {
-    return `sq:/${path.join(this.credentials.workspace, this.credentials.database
-
-        .replace(/^\.\//, '')
-        .replace(/\$\workspaceRoot}/, ''))}`;
+    return `sq://${this.credentials.database.replace('${workspaceRoot}', this.credentials.workspace)}`;
   }
 
   private getBinPath() {
     if (this.binPath) return this.binPath;
     const filename = process.platform === 'win32' ? 'usql.exe' : 'usql';
-    this.binPath = path.join(path.dirname(path.dirname(path.dirname(__dirname))), filename);
+    this.binPath = path.join(path.dirname(path.dirname(path.dirname(__dirname))), 'bin', filename);
     return this.binPath;
+  }
+
+  private splitRow(row) {
+    return row.trim().split(' | ');
+  }
+
+  private parseRow(row, cols) {
+    return this.splitRow(row).reduce((p, c, i) => {
+      p[cols[i]] = c;
+      return p;
+    }, {});
   }
 }

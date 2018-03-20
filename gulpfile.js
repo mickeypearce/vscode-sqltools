@@ -67,7 +67,7 @@ function _buildReactFile (file) {
   const bundler = browserify(Object.assign({}, browserifyInc.args, {
     entries: cfg.react.entry(file),
     transform: [
-      babelify.configure({ presets: ['es2015', 'react'] }),
+      babelify.configure({ presets: ['env', 'react'] }),
       [uglifyify]
     ]
   }))

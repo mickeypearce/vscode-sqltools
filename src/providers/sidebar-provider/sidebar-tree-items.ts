@@ -7,6 +7,7 @@ import {
   TreeItem,
   TreeItemCollapsibleState,
   window,
+  ThemeIcon,
 } from 'vscode';
 import DatabaseInterface from './../../api/interface/database-interface';
 
@@ -34,8 +35,8 @@ export class SidebarDatabase extends TreeItem {
 
 export class SidebarDatabaseStructure extends TreeItem {
   public iconPath = {
-    dark: path.join(__dirname, '..', '..', 'resources', 'icon', 'folder-open-dark.svg'),
-    light: path.join(__dirname, '..', '..', 'resources', 'icon', 'folder-open-light.svg'),
+    dark: ThemeIcon.Folder,
+    light: ThemeIcon.Folder,
   };
   public contextValue = 'connection.structure';
   public items: { [name: string]: SidebarTable | SidebarView} = {};

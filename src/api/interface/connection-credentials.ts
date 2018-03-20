@@ -1,3 +1,5 @@
+import { DatabaseDialect } from './settings';
+
 export default interface ConnectionCredentials {
   name: string;
   server: string;
@@ -7,7 +9,8 @@ export default interface ConnectionCredentials {
   username: string;
   password?: string;
   askForPassword?: boolean;
-  dialect: string;
-  dialectOptions?: { encrypt: boolean };
+  dialect: DatabaseDialect;
+  dialectOptions?: { encrypt: boolean, [x: string]: any };
   connectionTimeout?: number;
+  workspace?: string;
 }

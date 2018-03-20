@@ -9,6 +9,7 @@ export enum DatabaseDialect {
   MSSQL,
   MySQL,
   PostgreSQL,
+  'SQLite (via usql)',
 }
 
 export type CompletionLanguages = string[];

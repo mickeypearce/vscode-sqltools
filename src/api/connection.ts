@@ -14,6 +14,8 @@ export interface SerializedConnection {
   port: number | string;
   server: string;
   username: string;
+  dialect: string;
+  database: string;
 }
 
 export default class Connection {
@@ -22,7 +24,7 @@ export default class Connection {
   private connected: boolean = false;
   private conn: ConnectionDialect;
   constructor(credentials: ConnectionCredentials, private logger: LoggerInterface) {
-    this.conn = new Dialects[credentials.dialect](credentials);
+    this.conn = new Dialects[Dialects.getInternalName(credentials.dialect)](credentials);
   }
 
   public needsPassword() {
@@ -120,6 +122,14 @@ export default class Connection {
     return this.conn.credentials.username;
   }
 
+  public getDatabase() {
+    return this.conn.credentials.database;
+  }
+
+  public getDialect() {
+    return Dialects.getType(this.conn.credentials.dialect);
+  }
+
   public serialize(): SerializedConnection {
     return {
       isConnected: this.isConnected(),
@@ -128,6 +138,8 @@ export default class Connection {
       port: this.getPort(),
       server: this.getServer(),
       username: this.getUsername(),
+      dialect: this.getDialect(),
+      database: this.getDatabase(),
     };
   }
 }

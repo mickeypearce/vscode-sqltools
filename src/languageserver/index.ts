@@ -30,11 +30,11 @@ import {
 } from '../contracts/connection-requests';
 import HTTPServer from './http-server';
 import { TableColumnCompletionItem, TableCompletionItem } from './requests/completion/models';
-import Logger from './utils/logger';
 import USQLDownloader from './utils/usql-downloader';
 
 namespace SQLToolsLanguageServer {
   const server: IConnection = createConnection(new IPCMessageReader(process), new IPCMessageWriter(process));
+  const Logger = server.console;
   const docManager: TextDocuments = new TextDocuments();
   const localSetup = Utils.localSetupInfo();
   Telemetry.register();
@@ -81,7 +81,7 @@ namespace SQLToolsLanguageServer {
         updateSidebar(t, c);
         return loadCompletionItens(t, c);
       }).catch((e) => {
-        Logger.error('Error while preparing columns completions', e);
+        Logger.error('Error while preparing columns completions' + e.toString());
       });
   }
 
@@ -91,7 +91,6 @@ namespace SQLToolsLanguageServer {
 
   /* server events */
   server.onInitialize((params): InitializeResult => {
-    USQLDownloader.checkAndDownload(path.dirname(path.dirname(__dirname)));
     workspaceRoot = params.rootPath;
     return {
       capabilities: {
@@ -103,6 +102,12 @@ namespace SQLToolsLanguageServer {
         textDocumentSync: docManager.syncKind,
       },
     };
+  });
+
+  server.onInitialized(() => {
+    USQLDownloader.checkAndDownload(path.dirname(path.dirname(__dirname)));
+    ConnectionManager.setWorkspace(workspaceRoot);
+    Logger.log('Initialized');
   });
 
   server.onDidChangeConfiguration(async (change) => {
@@ -157,14 +162,7 @@ namespace SQLToolsLanguageServer {
       if (activeConnection) activeConnection.close();
       completionItems = [];
       activeConnection = null;
-      return {
-        isConnected: false,
-        name: null,
-        needsPassword: true,
-        port: null,
-        server: null,
-        username: null,
-      };
+      return null;
     }
     const c = sgdbConnections.find((conn) => conn.getName() === req.conn.name);
     if (req.password) c.setPassword(req.password);

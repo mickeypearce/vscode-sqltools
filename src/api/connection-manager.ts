@@ -6,7 +6,7 @@ export default class ConnectionManager {
   public static getConnections(logger: LoggerInterface, serialized: boolean = false): any[] {
     const connectionsConfig = ConfigManager.get('connections', []) as any[];
     ConnectionManager.connections = connectionsConfig.map((credentials): Connection => {
-      return new Connection(credentials, logger);
+      return new Connection(Object.assign({}, { workspace: ConnectionManager.workspace }, credentials), logger);
     });
 
     if (!serialized) return ConnectionManager.connections;
@@ -28,5 +28,10 @@ export default class ConnectionManager {
 
     return conn.serialize();
   }
+
+  public static setWorkspace(wspc: string) {
+    ConnectionManager.workspace = wspc;
+  }
   private static connections: Connection[] = [];
+  private static workspace: string;
 }

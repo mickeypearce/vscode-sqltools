@@ -3,9 +3,9 @@ import child_process = require('child_process');
 const { spawn } = child_process;
 
 namespace Process {
-  export async function run(cmd: string, args: string[]) {
+  export async function run(cmd: string, args: string[], opt: child_process.SpawnOptions = {}) {
     return new Promise((resolve, reject) => {
-      const proc = spawn(cmd, args);
+      const proc = spawn(cmd, args, opt);
       let result = '';
       let error = '';
 

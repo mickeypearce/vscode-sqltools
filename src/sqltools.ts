@@ -1,3 +1,4 @@
+import path = require('path');
 import {
   commands as VSCode,
   ExtensionContext,
@@ -246,9 +247,13 @@ namespace SQLTools {
     const connections: SerializedConnection[] = await languageClient.sendRequest(GetConnectionListRequest);
 
     const sel = (await quickPick(connections.map((c) => {
+      let detail = `${c.username}@${c.server}:${c.port}/${c.database}`;
+      if (c.dialect === 'SQLite') {
+        detail = `file://${c.database}`;
+      }
       return {
-        description: c.isConnected ? 'Currently connected' : '',
-        detail: `${c.username}@${c.server}:${c.port}`,
+        description: `(${c.dialect})${c.isConnected ? ' Connected' : ''}`,
+        detail,
         label: c.name,
       } as QuickPickItem;
     }), 'label')) as string;
@@ -374,6 +379,7 @@ namespace SQLTools {
     ctx.subscriptions.push(
       LogWriter.getOutputChannel(),
       Wspc.onDidChangeConfiguration(reloadConfig),
+      Wspc.onDidChangeWorkspaceFolders(reloadConfig),
       await getLanguageServerDisposable(),
       Wspc.registerTextDocumentContentProvider(preview.uri.scheme, preview),
       ...getExtCommands(),
@@ -433,7 +439,7 @@ namespace SQLTools {
   }
 
   async function getLanguageServerDisposable() {
-    const serverModule = ctx.asAbsolutePath(require('path').join('dist', 'languageserver', 'index.js'));
+    const serverModule = ctx.asAbsolutePath(path.join('dist', 'languageserver', 'index.js'));
     const debugOptions = { execArgv: ['--nolazy', '--inspect=6010'] };
 
     const serverOptions: ServerOptions = {
@@ -542,10 +548,20 @@ namespace SQLTools {
     }
     return await tableMenu('label');
   }
-  async function quickPick(options: QuickPickItem[], prop: string = null): Promise<QuickPickItem | any> {
-    const sel: QuickPickItem = await Win.showQuickPick(options);
-    if (!sel || (prop && !sel[prop])) throw new DismissedException();
-    return prop ? sel[prop] : sel;
+
+  async function quickPick(
+    items: QuickPickItem[],
+    opt: ({ prop?: string, placeholder?: string } | string)): Promise<QuickPickItem | any> {
+    if (typeof opt === 'string') {
+      opt = { prop: opt };
+    }
+    const sel: QuickPickItem = await Win.showQuickPick(items, {
+      matchOnDescription: true,
+      matchOnDetail: true,
+      placeHolder: opt.placeholder,
+    });
+    if (!sel || (opt.prop && !sel[opt.prop])) throw new DismissedException();
+    return opt.prop ? sel[opt.prop] : sel;
   }
   async function readInput(prompt: string, placeholder?: string) {
     const data = await Win.showInputBox({ prompt, placeHolder: placeholder || prompt });
@@ -555,6 +571,10 @@ namespace SQLTools {
 
   function isEmpty(v) {
     return !v || v.length === 0;
+  }
+
+  function workspaceFolder() {
+    return Wspc.workspaceFolders.length > 0 ? Wspc.workspaceFolders[0].uri.fsPath : null;
   }
 }
 
