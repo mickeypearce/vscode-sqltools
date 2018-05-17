@@ -1,13 +1,18 @@
 import MSSQL from './mssql';
 import MySQL from './mysql';
-import OracleDB from './oracledb';
 import PostgreSQL from './pgsql';
+
+const INCLUDE_ORACLEDB = false;
+let OracleDB;
+if (INCLUDE_ORACLEDB) {
+  OracleDB = require('./oracledb');
+}
 
 const dialects = {
   MSSQL,
   MySQL,
-  PostgreSQL,
-  OracleDB,
+  PostgreSQL,  
+  ...(INCLUDE_ORACLEDB ? {OracleDB} : {}),  
 };
 
 export default dialects;
